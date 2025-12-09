@@ -1,0 +1,15 @@
+{
+  "project": {
+    "name": "Mini Project 3",
+    "version": "1.0.0"
+  },
+  "data": {
+    "input_dir": "assets",
+    "output_dir": "data/processed",
+    "excel_file": "assets/ride_hailing.xlsx"
+  },
+  "settings": {
+    "debug": false,
+    "log_level": "INFO"
+  }
+}
