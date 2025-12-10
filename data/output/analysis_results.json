@@ -1,0 +1,214 @@
+{
+  "summary": {
+    "total_records": 337,
+    "unique_drivers": 90,
+    "unique_riders": 96,
+    "unique_plates": 100,
+    "date_range": {
+      "start": "2025-09-17 18:00:00",
+      "end": "2025-09-17 18:41:00"
+    },
+    "services": {
+      "Uber": 122,
+      "Lyft": 114,
+      "Other": 101
+    },
+    "spatial_range": {
+      "x_min": 420.0,
+      "x_max": 1157.0,
+      "y_min": 385.0,
+      "y_max": 820.0
+    }
+  },
+  "temporal_analysis": {
+    "hourly_distribution": {
+      "18": 337
+    },
+    "day_of_week_distribution": {
+      "2": 337
+    },
+    "weekend_vs_weekday": {
+      "weekend": 0,
+      "weekday": 337
+    },
+    "peak_hours": [
+      18
+    ],
+    "daily_trends": {
+      "average_daily_rides": 337.0,
+      "max_daily_rides": 337,
+      "min_daily_rides": 337,
+      "std_daily_rides": NaN
+    }
+  },
+  "spatial_analysis": {
+    "hotspots": [
+      {
+        "x_range": "(935.9, 1009.6]",
+        "y_range": "(428.5, 472.0]",
+        "ride_count": 27
+      },
+      {
+        "x_range": "(935.9, 1009.6]",
+        "y_range": "(733.0, 776.5]",
+        "ride_count": 26
+      },
+      {
+        "x_range": "(567.4, 641.1]",
+        "y_range": "(733.0, 776.5]",
+        "ride_count": 22
+      },
+      {
+        "x_range": "(935.9, 1009.6]",
+        "y_range": "(646.0, 689.5]",
+        "ride_count": 20
+      },
+      {
+        "x_range": "(935.9, 1009.6]",
+        "y_range": "(776.5, 820.0]",
+        "ride_count": 19
+      }
+    ],
+    "spatial_distribution": {
+      "x_mean": 817.5489614243323,
+      "x_std": 270.28559323634056,
+      "y_mean": 612.2700296735906,
+      "y_std": 146.88267130219333
+    },
+    "coverage_area": {
+      "x_range": 737.0,
+      "y_range": 435.0,
+      "estimated_area": 320595.0
+    }
+  },
+  "service_analysis": {
+    "service_distribution": {
+      "Uber": 122,
+      "Lyft": 114,
+      "Other": 101
+    },
+    "service_by_hour": {
+      "18": {
+        "Lyft": 114,
+        "Other": 101,
+        "Uber": 122
+      }
+    },
+    "service_by_day": {
+      "2": {
+        "Lyft": 114,
+        "Other": 101,
+        "Uber": 122
+      }
+    },
+    "top_drivers_by_service": {
+      "Uber": {
+        "D-201": 5,
+        "D-384": 5,
+        "D-831": 5,
+        "D-692": 5,
+        "D-419": 5
+      },
+      "Other": {
+        "D-456": 6,
+        "D-202": 5,
+        "D-867": 5,
+        "D-346": 5,
+        "D-615": 5
+      },
+      "Lyft": {
+        "D-754": 9,
+        "D-985": 7,
+        "D-719": 5,
+        "D-909": 5,
+        "D-960": 5
+      }
+    }
+  },
+  "driver_performance": {
+    "top_drivers": {
+      "D-754": {
+        "total_rides": 9,
+        "unique_riders": 2,
+        "plate_number": "JN2DF6",
+        "service": "Lyft"
+      },
+      "D-384": {
+        "total_rides": 8,
+        "unique_riders": 2,
+        "plate_number": "C83S708",
+        "service": "Uber"
+      },
+      "D-930": {
+        "total_rides": 8,
+        "unique_riders": 2,
+        "plate_number": "YGYHQM3",
+        "service": "Other"
+      },
+      "D-827": {
+        "total_rides": 7,
+        "unique_riders": 2,
+        "plate_number": "EYELGK",
+        "service": "Lyft"
+      },
+      "D-985": {
+        "total_rides": 7,
+        "unique_riders": 2,
+        "plate_number": "CP5Q4M",
+        "service": "Lyft"
+      },
+      "D-456": {
+        "total_rides": 6,
+        "unique_riders": 2,
+        "plate_number": "ZPR5EQ",
+        "service": "Other"
+      },
+      "D-483": {
+        "total_rides": 6,
+        "unique_riders": 2,
+        "plate_number": "HLTLM1",
+        "service": "Other"
+      },
+      "D-560": {
+        "total_rides": 6,
+        "unique_riders": 2,
+        "plate_number": "XLCPAU8",
+        "service": "Other"
+      },
+      "D-578": {
+        "total_rides": 6,
+        "unique_riders": 2,
+        "plate_number": "DD0BVK",
+        "service": "Lyft"
+      },
+      "D-884": {
+        "total_rides": 6,
+        "unique_riders": 2,
+        "plate_number": "KG6EW2",
+        "service": "Lyft"
+      }
+    },
+    "average_rides_per_driver": 3.7444444444444445,
+    "driver_efficiency": {
+      "most_versatile_driver": "D-384",
+      "most_active_driver": "D-754",
+      "rides_per_rider_ratio": 3.37
+    }
+  },
+  "insights": [
+    "Peak hours: 18",
+    "Weekend rides account for 0.0% of total rides",
+    "Most popular service: Uber with 122 rides",
+    "Average rides per driver: 3.7",
+    "Service coverage area: 320595 square units"
+  ],
+  "plate_statistics": {
+    "total_plates": 100,
+    "average_width": 512.0,
+    "average_height": 245.0,
+    "min_width": 512,
+    "max_width": 512,
+    "min_height": 245,
+    "max_height": 245
+  }
+}

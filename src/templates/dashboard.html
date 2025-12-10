@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sky Harbor Airport - Ride-Hailing Display</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #1a237e 100%);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .time-display {
+            text-align: right;
+        }
+
+        .time-display .time {
+            font-size: 3em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .time-display .date {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .parking-zones {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+        }
+
+        .parking-zones h2 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .zone-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 8px;
+            height: calc(100% - 60px);
+        }
+
+        .zone-cell {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .zone-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Color classes - using !important to ensure they override defaults */
+        .zone-cell.available {
+            background: rgba(76, 175, 80, 0.4) !important;
+            border-color: #4caf50 !important;
+        }
+
+        .zone-cell.moderate {
+            background: rgba(255, 193, 7, 0.4) !important;
+            border-color: #ffc107 !important;
+        }
+
+        .zone-cell.busy {
+            background: rgba(244, 67, 54, 0.4) !important;
+            border-color: #f44336 !important;
+        }
+
+        .zone-id {
+            font-size: 0.7em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .zone-occupancy {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .active-rides {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+        }
+
+        .active-rides h2 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .ride-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ride-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 15px;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .ride-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .ride-icon {
+            font-size: 2em;
+        }
+
+        .ride-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ride-plate {
+            font-size: 1.5em;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        .ride-service {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .ride-metrics {
+            text-align: center;
+            padding: 5px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .ride-metrics .metric-value {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .ride-metrics .metric-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .ride-time {
+            text-align: right;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .footer {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .footer .stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .qr-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .qr-code {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 5px;
+            padding: 5px;
+            object-fit: contain;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .updating {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>🚕 Sky Harbor Airport - Ride-Hailing Display</h1>
+            <div class="time-display">
+                <div class="time" id="current-time">--:--</div>
+                <div class="date" id="current-date">Loading...</div>
+            </div>
+        </div>
+
+        <div class="parking-zones">
+            <h2>Parking Zone Status</h2>
+            <div class="zone-grid" id="zone-grid">
+                <div class="loading">Loading parking zones...</div>
+            </div>
+        </div>
+
+        <div class="active-rides">
+            <h2>Active Rides Queue</h2>
+            <div class="ride-list" id="ride-list">
+                <div class="loading">Loading active rides...</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="total-rides">0</div>
+                    <div class="stat-label">Rides Today</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="active-drivers">0</div>
+                    <div class="stat-label">Active Drivers</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="occupied-zones">0</div>
+                    <div class="stat-label">Occupied Zones</div>
+                </div>
+            </div>
+            <div class="qr-section">
+                <img id="qr-code-image" src="/api/qr-code-image" alt="QR Code" class="qr-code" style="width: 80px; height: 80px; border-radius: 5px; background: white; padding: 5px;">
+                <div>
+                    <div style="font-weight: bold;">Scan for Info</div>
+                    <div style="font-size: 0.8em; opacity: 0.8;">Ride-hailing information</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update current time
+        function updateTime() {
+            fetch('/api/current-time')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('current-time').textContent = data.time;
+                    document.getElementById('current-date').textContent = data.date;
+                })
+                .catch(error => console.error('Error updating time:', error));
+        }
+
+        // Update parking zones
+        function updateParkingZones() {
+            fetch('/api/parking-zones')
+                .then(response => response.json())
+                .then(data => {
+                    const grid = document.getElementById('zone-grid');
+                    grid.innerHTML = '';
+                    
+                    data.grid.forEach(row => {
+                        row.forEach(zone => {
+                            const cell = document.createElement('div');
+                            // Ensure status is correctly applied based on occupancy
+                            let statusClass = 'available';
+                            if (zone.occupancy >= 3) {
+                                statusClass = 'busy';
+                            } else if (zone.occupancy >= 1) {
+                                statusClass = 'moderate';
+                            }
+                            cell.className = `zone-cell ${statusClass}`;
+                            cell.innerHTML = `
+                                <div class="zone-id">${zone.zone_id}</div>
+                                <div class="zone-occupancy">${zone.occupancy}</div>
+                            `;
+                            grid.appendChild(cell);
+                        });
+                    });
+
+                    document.getElementById('occupied-zones').textContent = data.occupied_zones;
+                })
+                .catch(error => console.error('Error updating parking zones:', error));
+        }
+
+        // Update active rides
+        function updateActiveRides() {
+            fetch('/api/active-rides')
+                .then(response => response.json())
+                .then(data => {
+                    const list = document.getElementById('ride-list');
+                    list.innerHTML = '';
+                    
+                    if (data.rides.length === 0) {
+                        list.innerHTML = '<div class="loading">No active rides at this time</div>';
+                        return;
+                    }
+
+                    data.rides.forEach(ride => {
+                        const item = document.createElement('div');
+                        item.className = 'ride-item';
+                        item.innerHTML = `
+                            <div class="ride-icon">🚗</div>
+                            <div class="ride-info">
+                                <div class="ride-plate">${ride.plate_number}</div>
+                                <div class="ride-service">${ride.service}</div>
+                            </div>
+                            <div class="ride-metrics">
+                                <div class="metric-value">${ride.wait_time}</div>
+                                <div class="metric-label">min wait</div>
+                            </div>
+                            <div class="ride-time">${ride.time}</div>
+                        `;
+                        list.appendChild(item);
+                    });
+                })
+                .catch(error => console.error('Error updating active rides:', error));
+        }
+
+        // Update dashboard stats
+        function updateDashboardStats() {
+            fetch('/api/dashboard-stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total-rides').textContent = data.total_rides_today || 0;
+                    document.getElementById('active-drivers').textContent = data.active_drivers || 0;
+                })
+                .catch(error => console.error('Error updating dashboard stats:', error));
+        }
+
+        // Update all data
+        function updateAll() {
+            updateTime();
+            updateParkingZones();
+            updateActiveRides();
+            updateDashboardStats();
+        }
+
+        // Initial load
+        updateAll();
+
+        // Update every 5 seconds
+        setInterval(updateAll, 5000);
+        // Update time every second
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>
+

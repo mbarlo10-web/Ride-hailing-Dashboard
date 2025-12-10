@@ -134,11 +134,33 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        logger.info("\nAnalysis interrupted by user")
-        sys.exit(0)
-    except Exception as e:
-        logger.error(f"Error during analysis: {e}", exc_info=True)
-        sys.exit(1)
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Ride-Hailing Data Analysis Application')
+    parser.add_argument('--dashboard', action='store_true', 
+                       help='Launch web dashboard instead of running analysis')
+    parser.add_argument('--port', type=int, default=5000,
+                       help='Port for dashboard server (default: 5000)')
+    
+    args = parser.parse_args()
+    
+    if args.dashboard:
+        # Launch dashboard
+        from dashboard import app, initialize_data
+        initialize_data()
+        logger.info("=" * 60)
+        logger.info("Starting Ride-Hailing Dashboard Server...")
+        logger.info(f"Dashboard available at: http://localhost:{args.port}")
+        logger.info("Press Ctrl+C to stop the server")
+        logger.info("=" * 60)
+        app.run(debug=True, host='0.0.0.0', port=args.port)
+    else:
+        # Run analysis
+        try:
+            main()
+        except KeyboardInterrupt:
+            logger.info("\nAnalysis interrupted by user")
+            sys.exit(0)
+        except Exception as e:
+            logger.error(f"Error during analysis: {e}", exc_info=True)
+            sys.exit(1)

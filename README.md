@@ -13,6 +13,9 @@ This is an improved Python-based data analysis application for ride-hailing data
 - **Driver Performance**: Driver efficiency and performance metrics
 - **Visualization**: Comprehensive charts and graphs
 - **License Plate Management**: Utilities for working with plate images
+- **🆕 Real-Time Dashboard**: Web-based dashboard for Sky Harbor Airport display
+  - **Feature 1: Parking Zone Status Grid**: Real-time visualization of parking zones with occupancy status
+  - **Feature 2: Active Ride Queue**: Live display of active rides with license plates, wait times, and timestamps
 
 ## 📁 Project Structure
 
@@ -21,10 +24,13 @@ mini-project-3-mark-barlow/
 ├── src/
 │   ├── __init__.py
 │   ├── main.py              # Main application entry point
+│   ├── dashboard.py          # Web dashboard application
 │   ├── data_loader.py       # Data loading and preprocessing
 │   ├── analyzer.py          # Data analysis and insights
 │   ├── visualizer.py        # Visualization generation
-│   └── plate_utils.py       # License plate image utilities
+│   ├── plate_utils.py       # License plate image utilities
+│   └── templates/
+│       └── dashboard.html   # Dashboard HTML template
 ├── assets/
 │   ├── ride_hailing.xlsx    # Main dataset
 │   ├── map.png              # Map image
@@ -59,9 +65,17 @@ pip install -r requirements.txt
 
 ### 3. Run the Application
 
+**Option A: Run Data Analysis**
 ```bash
 python src/main.py
 ```
+
+**Option B: Launch Web Dashboard**
+```bash
+python src/main.py --dashboard
+```
+
+The dashboard will be available at `http://localhost:5000` (or specify a different port with `--port`)
 
 ## 📊 Usage
 
@@ -79,6 +93,24 @@ This will:
 - Generate insights
 - Create visualizations
 - Save results to `data/output/`
+
+### Web Dashboard
+
+Launch the real-time ride-hailing dashboard for airport display:
+
+```bash
+python src/main.py --dashboard
+```
+
+The dashboard provides:
+- **Real-time updates** every 5 seconds
+- **Parking Zone Status Grid**: 8x6 grid showing zone occupancy (green=available, yellow=moderate, red=busy)
+- **Active Ride Queue**: List of current rides with license plates, service types, wait times, and timestamps
+- **Live Statistics**: Total rides, active drivers, and occupied zones
+- **Current Time Display**: Real-time clock synchronized with server
+- **Airport-Style Design**: Dark blue theme optimized for large-screen displays
+
+Perfect for displaying at Sky Harbor Airport waiting areas!
 
 ### Programmatic Usage
 
@@ -159,6 +191,8 @@ See `requirements.txt` for full list. Key dependencies:
 - seaborn: Statistical visualizations
 - Pillow: Image processing
 - openpyxl: Excel file handling
+- flask: Web framework for dashboard
+- qrcode: QR code generation
 
 ## 👤 Author
 
