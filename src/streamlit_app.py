@@ -63,12 +63,18 @@ def load_data():
         return None, None, None, None
 
 
-def get_parking_zones(df, grid_rows=8, grid_cols=6):
-    """Build parking zone grid (same logic as Flask API)."""
+def get_parking_zones(df, current_time=None, grid_rows=8, grid_cols=6):
+    """Build parking zone grid (same logic as Flask API).
+
+    If current_time is provided, we simulate 'now' at that timestamp so that
+    the dashboard can move through time for demonstration.
+    """
     if df is None or df.empty:
         return []
-    latest_time = df["current_time"].max()
-    active_window = latest_time - timedelta(minutes=30)
+    # Use simulated time if provided, otherwise fall back to max timestamp
+    if current_time is None:
+        current_time = df["current_time"].max()
+    active_window = current_time - timedelta(minutes=30)
     recent = df[df["current_time"] >= active_window].copy()
     x_min, x_max = df["x"].min(), df["x"].max()
     y_min, y_max = df["y"].min(), df["y"].max()
@@ -114,17 +120,21 @@ def get_parking_zones(df, grid_rows=8, grid_cols=6):
     return grid
 
 
-def get_active_rides(df, plate_manager, top_n=20):
-    """Build active rides list (same logic as Flask API)."""
+def get_active_rides(df, plate_manager, current_time=None, top_n=20):
+    """Build active rides list (same logic as Flask API).
+
+    Uses current_time to control which rides are considered 'active'.
+    """
     if df is None or df.empty:
         return []
-    latest_time = df["current_time"].max()
-    active_window = latest_time - timedelta(minutes=30)
+    if current_time is None:
+        current_time = df["current_time"].max()
+    active_window = current_time - timedelta(minutes=30)
     recent = df[df["current_time"] >= active_window].copy()
     recent = recent.sort_values("current_time", ascending=False).head(top_n)
     recent = recent.copy()
     recent["wait_time"] = (
-        (latest_time - recent["current_time"]).dt.total_seconds() / 60
+        (current_time - recent["current_time"]).dt.total_seconds() / 60
     ).clip(lower=1)
     rides = []
     for idx, (_, ride) in enumerate(recent.iterrows()):
@@ -144,6 +154,28 @@ def get_active_rides(df, plate_manager, top_n=20):
             }
         )
     return rides
+
+
+def get_simulated_current_time(df: pd.DataFrame) -> datetime | None:
+    """
+    Step through the dataset's timeline so the dashboard changes over time.
+
+    Each rerun advances to the next distinct timestamp; when it reaches the end,
+    it wraps back to the start. This gives visible motion in the grid and queue.
+    """
+    if df is None or df.empty or "current_time" not in df.columns:
+        return None
+
+    # Sorted unique timestamps from the data
+    times = pd.to_datetime(df["current_time"].sort_values().unique())
+    if len(times) == 0:
+        return None
+
+    key = "sim_index"
+    idx = st.session_state.get(key, -1)
+    idx = (idx + 1) % len(times)
+    st.session_state[key] = idx
+    return times[idx]
 
 
 def build_qr_image(url: str) -> BytesIO:
@@ -176,6 +208,9 @@ def main():
 
     df, data_loader, analyzer, plate_manager = load_data()
 
+    # Choose a simulated "current" time for data-driven components
+    sim_time = get_simulated_current_time(df) if df is not None else None
+
     # Header
     col_title, col_time = st.columns([2, 1])
     with col_title:
@@ -196,7 +231,7 @@ def main():
 
     with col_zones:
         st.subheader("Parking Zone Status")
-        grid = get_parking_zones(df)
+        grid = get_parking_zones(df, current_time=sim_time)
         for row in grid:
             cols = st.columns(6)
             for c, cell in enumerate(row):
@@ -215,7 +250,7 @@ def main():
 
     with col_rides:
         st.subheader("Active Rides Queue")
-        rides = get_active_rides(df, plate_manager)
+        rides = get_active_rides(df, plate_manager, current_time=sim_time)
         if not rides:
             st.info("No active rides in the last 30 minutes.")
         else:
@@ -232,10 +267,10 @@ def main():
             )
             st.dataframe(ride_df, use_container_width=True, hide_index=True)
 
-    # Footer stats
+    # Footer stats (also driven by simulated time)
     occupied_count = sum(1 for row in grid for cell in row if cell["occupancy"] > 0)
-    latest_time = df["current_time"].max()
-    recent_window = latest_time - timedelta(hours=1)
+    stats_time = sim_time or df["current_time"].max()
+    recent_window = stats_time - timedelta(hours=1)
     recent_count = len(df[df["current_time"] >= recent_window])
     unique_drivers = df["driver_id"].nunique()
 
