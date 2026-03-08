@@ -40,7 +40,11 @@ def auto_refresh(interval_sec: int = 5) -> None:
         st.session_state[key] = now
     elif now - last >= interval_sec:
         st.session_state[key] = now
-        st.experimental_rerun()
+        # Use the stable rerun API; fall back if needed
+        if hasattr(st, "rerun"):
+            st.rerun()
+        elif hasattr(st, "experimental_rerun"):
+            st.experimental_rerun()
 
 
 @st.cache_data(ttl=300)
