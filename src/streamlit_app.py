@@ -140,13 +140,21 @@ def get_simulated_current_time(df: pd.DataFrame) -> Optional[datetime]:
     if df is None or df.empty or "current_time" not in df.columns:
         return None
 
-    times = pd.to_datetime(df["current_time"].sort_values().unique())
-    if len(times) == 0:
-        return None
+    min_time = df["current_time"].min()
+    max_time = df["current_time"].max()
+    total_duration = (max_time - min_time).total_seconds()
+    
+    if total_duration <= 0:
+        return max_time
 
-    step_seconds = 5
-    idx = int(time.time() // step_seconds) % len(times)
-    return times[idx]
+    # --- SPEED CONTROLS ---
+    # A multiplier of 120 means 1 real-world second = 2 simulated minutes.
+    speed_multiplier = 120 
+    
+    # Calculate simulated elapsed time, looping back to the start when it hits the end
+    sim_elapsed_seconds = (time.time() * speed_multiplier) % total_duration
+    
+    return min_time + timedelta(seconds=sim_elapsed_seconds)
 
 def build_qr_image(url: str) -> BytesIO:
     """Generate a QR code PNG image buffer for the given URL."""
@@ -169,7 +177,7 @@ def main():
         page_title="Sky Harbor Airport - Ride-Hailing Display",
         page_icon="🚕",
         layout="wide",
-        initial_sidebar_state="expanded", # Changed from collapsed so QR code shows
+        initial_sidebar_state="expanded", 
     )
 
     df, data_loader, analyzer, plate_manager = load_data()
