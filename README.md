@@ -14,9 +14,9 @@ This is an improved Python-based data analysis application for ride-hailing data
 - **Visualization**: Comprehensive charts and graphs
 - **License Plate Management**: Utilities for working with plate images
 - **🆕 Real-Time Dashboard**: Web-based dashboard for Sky Harbor Airport display
-  - **Feature 1: Parking Zone Status Grid**: Real-time visualization of parking zones with occupancy status
+  - **Feature 1: Parking Zone Status Grid**: Real-time visualization of parking zones with dynamic occupancy status
   - **Feature 2: Active Ride Queue**: Live display of active rides with license plates, wait times, and timestamps
-  - **Streamlit Simulation Mode**: On Streamlit, the dashboard replays historical data in accelerated time so the clock, zones, and active rides visibly update even from a static dataset
+  - **Feature 3: Interactive Portfolio Demo Mode (Streamlit)**: Includes a live simulation engine with an adjustable speed slider, allowing users to fast-forward through historical data to observe real-time system behavior and zone volatility.
 
 ## 📁 Project Structure
 
@@ -45,7 +45,7 @@ mini-project-3-mark-barlow/
 ├── docs/                    # Documentation
 ├── config/                  # Configuration files
 ├── requirements.txt         # Python dependencies
-└── README.md               # This file
+└── README.md                # This file
 ```
 
 ## 🛠️ Setup
@@ -79,12 +79,12 @@ python src/main.py --dashboard
 
 The dashboard will be available at `http://localhost:5000` (or specify a different port with `--port`)
 
-**Option C: Launch Streamlit Dashboard**
+**Option C: Launch Streamlit Dashboard (Recommended for Portfolio Review)**
 ```bash
 streamlit run src/streamlit_app.py
 ```
 
-Opens at `http://localhost:8501`. Deploy to [Streamlit Community Cloud](https://share.streamlit.io) by connecting this repo and setting main file to `src/streamlit_app.py`.
+Opens at `http://localhost:8501`. Deploy to [Streamlit Community Cloud](https://share.streamlit.io) by connecting this repo and setting the main file to `src/streamlit_app.py`.
 
 ## 📊 Usage
 
@@ -112,25 +112,23 @@ python src/main.py --dashboard
 ```
 
 The dashboard provides:
-- **Real-time updates** every 5 seconds
 - **Parking Zone Status Grid**: 8x6 grid showing zone occupancy (green=available, yellow=moderate, red=busy)
 - **Active Ride Queue**: List of current rides with license plates, service types, wait times, and timestamps
 - **Live Statistics**: Total rides, active drivers, and occupied zones
-- **Current Time Display**: Real-time clock synchronized with server (Flask) or accelerated simulated time (Streamlit)
 - **Airport-Style Design**: Dark blue theme optimized for large-screen displays
 
 Perfect for displaying at Sky Harbor Airport waiting areas!
 
-### Streamlit Dashboard (Simulation & Extras)
+### Streamlit Dashboard (Simulation & Portfolio Demo)
 
-When run via `streamlit_app.py` (locally or on Streamlit Community Cloud), the dashboard:
+When run via `streamlit_app.py` (locally or on Streamlit Community Cloud), the dashboard acts as an interactive simulation engine:
 
-- **Replays the dataset in accelerated time** so the clock, parking zones, and active rides update every few seconds
-- **Uses a simulated “now”** to drive wait times and occupancy, giving the feel of a live feed from historical data
-- Adds **Analysis Highlights** charts:
+- **Portfolio Demo Controls**: A sidebar slider allows you to adjust the simulation speed on the fly (for example, fast-forwarding so 1 real second equals many simulated minutes).
+- **Time-Series Playback**: Replays the dataset in accelerated time, demonstrating dynamic UI updates as parking zones fill/empty and active rides cycle through the queue.
+- **Analysis Highlights charts**:
   - Rides by hour of day
   - Rides by service
-- Includes a **QR code sidebar** with instructions so passengers can quickly access Sky Harbor information on their phones
+- Includes a **QR code sidebar** with instructions so passengers can quickly access Sky Harbor information on their phones.
 
 ### Programmatic Usage
 
@@ -174,24 +172,26 @@ The application generates:
 
 This version improves upon previous implementations by:
 
-1. **Modular Architecture**: Clean separation of concerns with dedicated modules
-2. **Comprehensive Analysis**: Multiple analysis dimensions (temporal, spatial, service, driver)
-3. **Automated Insights**: Automatic generation of human-readable insights
-4. **Enhanced Visualizations**: Professional, publication-ready charts
-5. **Error Handling**: Robust error handling and logging
-6. **Extensibility**: Easy to extend with new analysis methods
-7. **Documentation**: Comprehensive code documentation
+1. **Interactive Simulation Engine**: Dynamic time-series playback and adjustable simulation speed for engaging portfolio demonstrations.
+2. **Modular Architecture**: Clean separation of concerns with dedicated modules.
+3. **Comprehensive Analysis**: Multiple analysis dimensions (temporal, spatial, service, driver).
+4. **Automated Insights**: Automatic generation of human-readable insights.
+5. **Enhanced Visualizations**: Professional, publication-ready charts.
+6. **Error Handling**: Robust error handling and logging.
+7. **Extensibility**: Easy to extend with new analysis methods.
+8. **Documentation**: Comprehensive code documentation.
 
 ## 📝 Data Format
 
 The application expects an Excel file with the following columns:
-- `current_time`: Timestamp of the ride
-- `slot_id`: Time slot identifier
-- `x`, `y`: Spatial coordinates
-- `reservation_id`: Unique reservation identifier
-- `rider_id`: Rider identifier
-- `driver_id`: Driver identifier
-- `plate_number`: License plate number
+
+- `current_time`: Timestamp of the ride  
+- `slot_id`: Time slot identifier  
+- `x`, `y`: Spatial coordinates  
+- `reservation_id`: Unique reservation identifier  
+- `rider_id`: Rider identifier  
+- `driver_id`: Driver identifier  
+- `plate_number`: License plate number  
 - `service`: Service type (e.g., "Uber", "Lyft")
 
 ## 🧪 Testing
@@ -205,14 +205,16 @@ pytest tests/
 ## 📚 Dependencies
 
 See `requirements.txt` for full list. Key dependencies:
-- pandas: Data manipulation
-- numpy: Numerical computing
-- matplotlib: Basic plotting
-- seaborn: Statistical visualizations
-- Pillow: Image processing
-- openpyxl: Excel file handling
-- flask: Web framework for dashboard
-- qrcode: QR code generation
+
+- `pandas`: Data manipulation  
+- `numpy`: Numerical computing  
+- `matplotlib`: Basic plotting  
+- `seaborn`: Statistical visualizations  
+- `Pillow`: Image processing  
+- `openpyxl`: Excel file handling  
+- `flask`: Web framework for dashboard  
+- `streamlit`: Interactive web application framework  
+- `qrcode`: QR code generation
 
 ## 👤 Author
 
