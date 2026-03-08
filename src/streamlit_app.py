@@ -28,7 +28,7 @@ DATA_PATH = ROOT / "assets" / "ride_hailing.xlsx"
 PLATES_DIR = ROOT / "assets" / "plates"
 
 
-def auto_refresh(interval_sec: int = 5) -> None:
+def auto_refresh(interval_sec: int = 2) -> None:
     """
     Ask the browser to reload the page every `interval_sec` seconds.
     This gives us visible updates without relying on Streamlit's internal rerun APIs.
@@ -162,8 +162,8 @@ def get_simulated_current_time(df: pd.DataFrame) -> datetime | None:
     if len(times) == 0:
         return None
 
-    # One dataset time-step per 10 seconds of real time
-    step_seconds = 10
+    # One dataset time-step per 5 seconds of real time (faster simulation)
+    step_seconds = 5
     idx = int(time.time() // step_seconds) % len(times)
     return times[idx]
 
@@ -206,9 +206,10 @@ def main():
     with col_title:
         st.title("🚕 Sky Harbor Airport - Ride-Hailing Display")
     with col_time:
-        now = datetime.now()
-        st.metric("Time", now.strftime("%H:%M"))
-        st.caption(now.strftime("%A, %B %d, %Y"))
+        # Drive the displayed clock from the simulated timeline, not wall time
+        clock_time = sim_time or datetime.now()
+        st.metric("Time", clock_time.strftime("%H:%M"))
+        st.caption(clock_time.strftime("%A, %B %d, %Y"))
 
     if df is None:
         st.warning(
