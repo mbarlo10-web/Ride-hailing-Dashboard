@@ -4,6 +4,8 @@ Sky Harbor Airport ride-hailing display (Streamlit version)
 """
 
 import sys
+import time
+from io import BytesIO
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -14,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import streamlit as st
 import pandas as pd
+import qrcode
 
 from data_loader import RideHailingDataLoader
 from analyzer import RideHailingAnalyzer
@@ -23,6 +26,21 @@ from plate_utils import PlateImageManager
 # Paths relative to project root
 DATA_PATH = ROOT / "assets" / "ride_hailing.xlsx"
 PLATES_DIR = ROOT / "assets" / "plates"
+
+
+def auto_refresh(interval_sec: int = 5) -> None:
+    """
+    Automatically rerun the app every `interval_sec` seconds while it's open.
+    Mimics the real-time refresh behavior from the original dashboard.
+    """
+    key = "last_refresh_ts"
+    now = time.time()
+    last = st.session_state.get(key)
+    if last is None:
+        st.session_state[key] = now
+    elif now - last >= interval_sec:
+        st.session_state[key] = now
+        st.experimental_rerun()
 
 
 @st.cache_data(ttl=300)
@@ -124,6 +142,23 @@ def get_active_rides(df, plate_manager, top_n=20):
     return rides
 
 
+def build_qr_image(url: str) -> BytesIO:
+    """Generate a QR code PNG image buffer for the given URL."""
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=6,
+        border=2,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
+
+
 def main():
     st.set_page_config(
         page_title="Sky Harbor Airport - Ride-Hailing Display",
@@ -131,6 +166,9 @@ def main():
         layout="wide",
         initial_sidebar_state="collapsed",
     )
+
+    # Periodically rerun the app to simulate real-time updates
+    auto_refresh(interval_sec=5)
 
     df, data_loader, analyzer, plate_manager = load_data()
 
@@ -206,10 +244,40 @@ def main():
     with stat3:
         st.metric("Occupied zones", occupied_count)
 
-    # Optional: QR code for info page (link only on Streamlit Cloud)
+    # High-level analysis highlights (matches analytic capabilities from main app)
+    st.subheader("Analysis Highlights")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.caption("Rides by hour of day")
+        by_hour = df.copy()
+        by_hour["hour"] = by_hour["current_time"].dt.hour
+        rides_by_hour = by_hour.groupby("hour").size()
+        st.bar_chart(rides_by_hour)
+
+    with col_b:
+        st.caption("Rides by service")
+        if "service" in df.columns:
+            service_counts = df["service"].value_counts()
+            st.bar_chart(service_counts)
+        else:
+            st.info("No `service` column available in data.")
+
+    # QR code + info section, similar intent to the original Flask info page
     with st.sidebar:
-        st.caption("Ride-hailing information")
-        st.page_link("https://www.skyharbor.com/", label="Sky Harbor Airport info", icon="🔗")
+        st.caption("Ride-hailing display information")
+
+        # Generate a QR code that links to general Sky Harbor information.
+        target_url = "https://www.skyharbor.com/"
+        qr_buf = build_qr_image(target_url)
+        st.image(qr_buf, caption="Scan for Sky Harbor info", use_column_width=True)
+
+        st.markdown("**How to use this display**")
+        st.markdown(
+            "- Check the **Parking Zone Status** grid to find less busy zones.\n"
+            "- Look at the **Active Rides Queue** for plate, service, and wait time.\n"
+            "- Use the QR code to open airport information on your phone."
+        )
+        st.page_link(target_url, label="Sky Harbor Airport website", icon="🔗")
 
 
 if __name__ == "__main__":
