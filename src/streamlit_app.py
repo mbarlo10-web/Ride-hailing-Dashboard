@@ -8,6 +8,7 @@ import time
 from io import BytesIO
 from pathlib import Path
 from datetime import datetime, timedelta
+from typing import Optional
 
 # Project root and path setup (run from repo root: streamlit run src/streamlit_app.py)
 ROOT = Path(__file__).resolve().parent.parent
@@ -22,24 +23,11 @@ from data_loader import RideHailingDataLoader
 from analyzer import RideHailingAnalyzer
 from plate_utils import PlateImageManager
 
-
 # Paths relative to project root
 DATA_PATH = ROOT / "assets" / "ride_hailing.xlsx"
 PLATES_DIR = ROOT / "assets" / "plates"
 
-
-def auto_refresh(interval_sec: int = 2) -> None:
-    """
-    Ask the browser to reload the page every `interval_sec` seconds.
-    This gives us visible updates without relying on Streamlit's internal rerun APIs.
-    """
-    st.markdown(
-        f"<meta http-equiv='refresh' content='{interval_sec}'>",
-        unsafe_allow_html=True,
-    )
-
-
-@st.cache_data(ttl=300)
+@st.cache_resource(ttl=300)
 def load_data():
     """Load and clean ride-hailing data (cached)."""
     if not DATA_PATH.exists():
@@ -54,22 +42,19 @@ def load_data():
         st.error(f"Error loading data: {e}")
         return None, None, None, None
 
-
 def get_parking_zones(df, current_time=None, grid_rows=8, grid_cols=6):
-    """Build parking zone grid (same logic as Flask API).
-
-    If current_time is provided, we simulate 'now' at that timestamp so that
-    the dashboard can move through time for demonstration.
-    """
+    """Build parking zone grid (same logic as Flask API)."""
     if df is None or df.empty:
         return []
-    # Use simulated time if provided, otherwise fall back to max timestamp
+    
     if current_time is None:
         current_time = df["current_time"].max()
+        
     active_window = current_time - timedelta(minutes=30)
     recent = df[df["current_time"] >= active_window].copy()
     x_min, x_max = df["x"].min(), df["x"].max()
     y_min, y_max = df["y"].min(), df["y"].max()
+    
     zone_occupancy = {}
     for _, ride in recent.iterrows():
         x_norm = (ride["x"] - x_min) / (x_max - x_min) if (x_max - x_min) > 0 else 0.5
@@ -77,6 +62,7 @@ def get_parking_zones(df, current_time=None, grid_rows=8, grid_cols=6):
         grid_x = min(int(x_norm * grid_cols), grid_cols - 1)
         grid_y = min(int(y_norm * grid_rows), grid_rows - 1)
         zone_id = f"{grid_y}-{grid_x}"
+        
         if zone_id not in zone_occupancy:
             zone_occupancy[zone_id] = []
         zone_occupancy[zone_id].append(
@@ -86,6 +72,7 @@ def get_parking_zones(df, current_time=None, grid_rows=8, grid_cols=6):
                 "time": ride["current_time"].strftime("%H:%M"),
             }
         )
+        
     grid = []
     for row in range(grid_rows):
         grid_row = []
@@ -93,12 +80,14 @@ def get_parking_zones(df, current_time=None, grid_rows=8, grid_cols=6):
             zone_id = f"{row}-{col}"
             rides = zone_occupancy.get(zone_id, [])
             occupancy = len(rides)
+            
             if occupancy == 0:
                 status, color = "available", "green"
             elif occupancy <= 2:
                 status, color = "moderate", "yellow"
             else:
                 status, color = "busy", "red"
+                
             grid_row.append(
                 {
                     "zone_id": f"Zone {chr(65 + row)}{col + 1}",
@@ -111,16 +100,14 @@ def get_parking_zones(df, current_time=None, grid_rows=8, grid_cols=6):
         grid.append(grid_row)
     return grid
 
-
 def get_active_rides(df, plate_manager, current_time=None, top_n=20):
-    """Build active rides list (same logic as Flask API).
-
-    Uses current_time to control which rides are considered 'active'.
-    """
+    """Build active rides list (same logic as Flask API)."""
     if df is None or df.empty:
         return []
+        
     if current_time is None:
         current_time = df["current_time"].max()
+        
     active_window = current_time - timedelta(minutes=30)
     recent = df[df["current_time"] >= active_window].copy()
     recent = recent.sort_values("current_time", ascending=False).head(top_n)
@@ -128,6 +115,7 @@ def get_active_rides(df, plate_manager, current_time=None, top_n=20):
     recent["wait_time"] = (
         (current_time - recent["current_time"]).dt.total_seconds() / 60
     ).clip(lower=1)
+    
     rides = []
     for idx, (_, ride) in enumerate(recent.iterrows()):
         plate = ride.get("plate_number", "N/A")
@@ -147,14 +135,8 @@ def get_active_rides(df, plate_manager, current_time=None, top_n=20):
         )
     return rides
 
-
-def get_simulated_current_time(df: pd.DataFrame) -> datetime | None:
-    """
-    Map the current wall-clock time onto the dataset's timeline.
-
-    We use the UNIX timestamp to pick a different data timestamp every few
-    seconds so the dashboard appears to move through time continuously.
-    """
+def get_simulated_current_time(df: pd.DataFrame) -> Optional[datetime]:
+    """Map the current wall-clock time onto the dataset's timeline."""
     if df is None or df.empty or "current_time" not in df.columns:
         return None
 
@@ -162,11 +144,9 @@ def get_simulated_current_time(df: pd.DataFrame) -> datetime | None:
     if len(times) == 0:
         return None
 
-    # One dataset time-step per 5 seconds of real time (faster simulation)
     step_seconds = 5
     idx = int(time.time() // step_seconds) % len(times)
     return times[idx]
-
 
 def build_qr_image(url: str) -> BytesIO:
     """Generate a QR code PNG image buffer for the given URL."""
@@ -184,21 +164,16 @@ def build_qr_image(url: str) -> BytesIO:
     buf.seek(0)
     return buf
 
-
 def main():
     st.set_page_config(
         page_title="Sky Harbor Airport - Ride-Hailing Display",
         page_icon="🚕",
         layout="wide",
-        initial_sidebar_state="collapsed",
+        initial_sidebar_state="expanded", # Changed from collapsed so QR code shows
     )
-
-    # Periodically rerun the app to simulate real-time updates
-    auto_refresh(interval_sec=5)
 
     df, data_loader, analyzer, plate_manager = load_data()
 
-    # Choose a simulated "current" time for data-driven components
     sim_time = get_simulated_current_time(df) if df is not None else None
 
     # Header
@@ -206,7 +181,6 @@ def main():
     with col_title:
         st.title("🚕 Sky Harbor Airport - Ride-Hailing Display")
     with col_time:
-        # Drive the displayed clock from the simulated timeline, not wall time
         clock_time = sim_time or datetime.now()
         st.metric("Time", clock_time.strftime("%H:%M"))
         st.caption(clock_time.strftime("%A, %B %d, %Y"))
@@ -258,7 +232,7 @@ def main():
             )
             st.dataframe(ride_df, use_container_width=True, hide_index=True)
 
-    # Footer stats (also driven by simulated time)
+    # Footer stats
     occupied_count = sum(1 for row in grid for cell in row if cell["occupancy"] > 0)
     stats_time = sim_time or df["current_time"].max()
     recent_window = stats_time - timedelta(hours=1)
@@ -274,7 +248,7 @@ def main():
     with stat3:
         st.metric("Occupied zones", occupied_count)
 
-    # High-level analysis highlights (matches analytic capabilities from main app)
+    # High-level analysis highlights
     st.subheader("Analysis Highlights")
     col_a, col_b = st.columns(2)
     with col_a:
@@ -292,11 +266,9 @@ def main():
         else:
             st.info("No `service` column available in data.")
 
-    # QR code + info section, similar intent to the original Flask info page
+    # QR code + info section
     with st.sidebar:
         st.caption("Ride-hailing display information")
-
-        # Generate a QR code that links to general Sky Harbor information.
         target_url = "https://www.skyharbor.com/"
         qr_buf = build_qr_image(target_url)
         st.image(qr_buf, caption="Scan for Sky Harbor info", use_column_width=True)
@@ -309,6 +281,9 @@ def main():
         )
         st.page_link(target_url, label="Sky Harbor Airport website", icon="🔗")
 
+    # Native Streamlit auto-refresh
+    time.sleep(5)
+    st.rerun()
 
 if __name__ == "__main__":
     main()
