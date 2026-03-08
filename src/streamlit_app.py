@@ -50,10 +50,18 @@ def get_parking_zones(df, current_time=None, grid_rows=8, grid_cols=6):
     if current_time is None:
         current_time = df["current_time"].max()
         
+    # Active window is now dynamically bounded so older rides age out
     active_window = current_time - timedelta(minutes=30)
-    recent = df[df["current_time"] >= active_window].copy()
-    x_min, x_max = df["x"].min(), df["x"].max()
-    y_min, y_max = df["y"].min(), df["y"].max()
+    
+    # FIX: Added the upper boundary (<= current_time) so future rides aren't counted early
+    recent = df[(df["current_time"] >= active_window) & (df["current_time"] <= current_time)].copy()
+    
+    if recent.empty:
+        # Prevent min/max errors on empty slices
+        x_min, x_max, y_min, y_max = 0, 1, 0, 1
+    else:
+        x_min, x_max = df["x"].min(), df["x"].max()
+        y_min, y_max = df["y"].min(), df["y"].max()
     
     zone_occupancy = {}
     for _, ride in recent.iterrows():
@@ -109,12 +117,17 @@ def get_active_rides(df, plate_manager, current_time=None, top_n=20):
         current_time = df["current_time"].max()
         
     active_window = current_time - timedelta(minutes=30)
-    recent = df[df["current_time"] >= active_window].copy()
+    
+    # FIX: Added the upper boundary (<= current_time) 
+    recent = df[(df["current_time"] >= active_window) & (df["current_time"] <= current_time)].copy()
+    
     recent = recent.sort_values("current_time", ascending=False).head(top_n)
     recent = recent.copy()
-    recent["wait_time"] = (
-        (current_time - recent["current_time"]).dt.total_seconds() / 60
-    ).clip(lower=1)
+    
+    if not recent.empty:
+        recent["wait_time"] = (
+            (current_time - recent["current_time"]).dt.total_seconds() / 60
+        ).clip(lower=1)
     
     rides = []
     for idx, (_, ride) in enumerate(recent.iterrows()):
@@ -122,20 +135,21 @@ def get_active_rides(df, plate_manager, current_time=None, top_n=20):
         has_image = (
             plate_manager.get_plate_image(plate) is not None if plate_manager else False
         )
+        wait_time = int(ride.get("wait_time", 1))
         rides.append(
             {
                 "plate_number": plate,
                 "service": ride.get("service", "N/A"),
                 "time": ride["current_time"].strftime("%H:%M"),
-                "wait_time": int(ride["wait_time"]),
+                "wait_time": wait_time,
                 "has_image": has_image,
                 "zone": f"Zone {chr(65 + (idx % 8))}{(idx % 6) + 1}",
-                "status": "arriving" if ride["wait_time"] < 5 else "waiting",
+                "status": "arriving" if wait_time < 5 else "waiting",
             }
         )
     return rides
 
-def get_simulated_current_time(df: pd.DataFrame) -> Optional[datetime]:
+def get_simulated_current_time(df: pd.DataFrame, speed_multiplier: int = 600) -> Optional[datetime]:
     """Map the current wall-clock time onto the dataset's timeline."""
     if df is None or df.empty or "current_time" not in df.columns:
         return None
@@ -147,10 +161,6 @@ def get_simulated_current_time(df: pd.DataFrame) -> Optional[datetime]:
     if total_duration <= 0:
         return max_time
 
-    # --- SPEED CONTROLS ---
-    # A multiplier of 120 means 1 real-world second = 2 simulated minutes.
-    speed_multiplier = 120 
-    
     # Calculate simulated elapsed time, looping back to the start when it hits the end
     sim_elapsed_seconds = (time.time() * speed_multiplier) % total_duration
     
@@ -182,9 +192,32 @@ def main():
 
     df, data_loader, analyzer, plate_manager = load_data()
 
-    sim_time = get_simulated_current_time(df) if df is not None else None
+    # --- SIDEBAR & CONTROLS ---
+    with st.sidebar:
+        st.caption("Ride-hailing display information")
+        target_url = "https://www.skyharbor.com/"
+        qr_buf = build_qr_image(target_url)
+        st.image(qr_buf, caption="Scan for Sky Harbor info", use_column_width=True)
 
-    # Header
+        st.markdown("**How to use this display**")
+        st.markdown(
+            "- Check the **Parking Zone Status** grid to find less busy zones.\n"
+            "- Look at the **Active Rides Queue** for plate, service, and wait time.\n"
+            "- Use the QR code to open airport information on your phone."
+        )
+        st.page_link(target_url, label="Sky Harbor Airport website", icon="🔗")
+        
+        # Portfolio Demo Controls
+        st.divider()
+        st.subheader("⚙️ Portfolio Demo Controls")
+        st.caption("Adjust simulation speed to see real-time zone changes.")
+        sim_speed = st.slider("Simulation Speed", min_value=1, max_value=2000, value=600, step=50)
+
+    # --- SIMULATED TIME CALCULATION ---
+    # We calculate the time AFTER getting the speed from the sidebar slider
+    sim_time = get_simulated_current_time(df, speed_multiplier=sim_speed) if df is not None else None
+
+    # --- MAIN DASHBOARD HEADER ---
     col_title, col_time = st.columns([2, 1])
     with col_title:
         st.title("🚕 Sky Harbor Airport - Ride-Hailing Display")
@@ -199,7 +232,7 @@ def main():
         )
         st.stop()
 
-    # Parking zones and active rides side by side
+    # --- ZONES & RIDES SECTIONS ---
     col_zones, col_rides = st.columns([1, 1])
 
     with col_zones:
@@ -240,11 +273,13 @@ def main():
             )
             st.dataframe(ride_df, use_container_width=True, hide_index=True)
 
-    # Footer stats
+    # --- FOOTER STATS ---
     occupied_count = sum(1 for row in grid for cell in row if cell["occupancy"] > 0)
     stats_time = sim_time or df["current_time"].max()
     recent_window = stats_time - timedelta(hours=1)
-    recent_count = len(df[df["current_time"] >= recent_window])
+    
+    # FIX: Added upper boundary to stats calculation
+    recent_count = len(df[(df["current_time"] >= recent_window) & (df["current_time"] <= stats_time)])
     unique_drivers = df["driver_id"].nunique()
 
     st.divider()
@@ -256,7 +291,7 @@ def main():
     with stat3:
         st.metric("Occupied zones", occupied_count)
 
-    # High-level analysis highlights
+    # --- HIGHLIGHTS ---
     st.subheader("Analysis Highlights")
     col_a, col_b = st.columns(2)
     with col_a:
@@ -274,23 +309,8 @@ def main():
         else:
             st.info("No `service` column available in data.")
 
-    # QR code + info section
-    with st.sidebar:
-        st.caption("Ride-hailing display information")
-        target_url = "https://www.skyharbor.com/"
-        qr_buf = build_qr_image(target_url)
-        st.image(qr_buf, caption="Scan for Sky Harbor info", use_column_width=True)
-
-        st.markdown("**How to use this display**")
-        st.markdown(
-            "- Check the **Parking Zone Status** grid to find less busy zones.\n"
-            "- Look at the **Active Rides Queue** for plate, service, and wait time.\n"
-            "- Use the QR code to open airport information on your phone."
-        )
-        st.page_link(target_url, label="Sky Harbor Airport website", icon="🔗")
-
-    # Native Streamlit auto-refresh
-    time.sleep(5)
+    # Native Streamlit auto-refresh - Set to 2 seconds for a highly responsive portfolio demo
+    time.sleep(2)
     st.rerun()
 
 if __name__ == "__main__":
