@@ -30,21 +30,13 @@ PLATES_DIR = ROOT / "assets" / "plates"
 
 def auto_refresh(interval_sec: int = 5) -> None:
     """
-    Automatically rerun the app every `interval_sec` seconds while it's open.
-    Mimics the real-time refresh behavior from the original dashboard.
+    Ask the browser to reload the page every `interval_sec` seconds.
+    This gives us visible updates without relying on Streamlit's internal rerun APIs.
     """
-    key = "last_refresh_ts"
-    now = time.time()
-    last = st.session_state.get(key)
-    if last is None:
-        st.session_state[key] = now
-    elif now - last >= interval_sec:
-        st.session_state[key] = now
-        # Use the stable rerun API; fall back if needed
-        if hasattr(st, "rerun"):
-            st.rerun()
-        elif hasattr(st, "experimental_rerun"):
-            st.experimental_rerun()
+    st.markdown(
+        f"<meta http-equiv='refresh' content='{interval_sec}'>",
+        unsafe_allow_html=True,
+    )
 
 
 @st.cache_data(ttl=300)
@@ -158,23 +150,21 @@ def get_active_rides(df, plate_manager, current_time=None, top_n=20):
 
 def get_simulated_current_time(df: pd.DataFrame) -> datetime | None:
     """
-    Step through the dataset's timeline so the dashboard changes over time.
+    Map the current wall-clock time onto the dataset's timeline.
 
-    Each rerun advances to the next distinct timestamp; when it reaches the end,
-    it wraps back to the start. This gives visible motion in the grid and queue.
+    We use the UNIX timestamp to pick a different data timestamp every few
+    seconds so the dashboard appears to move through time continuously.
     """
     if df is None or df.empty or "current_time" not in df.columns:
         return None
 
-    # Sorted unique timestamps from the data
     times = pd.to_datetime(df["current_time"].sort_values().unique())
     if len(times) == 0:
         return None
 
-    key = "sim_index"
-    idx = st.session_state.get(key, -1)
-    idx = (idx + 1) % len(times)
-    st.session_state[key] = idx
+    # One dataset time-step per 10 seconds of real time
+    step_seconds = 10
+    idx = int(time.time() // step_seconds) % len(times)
     return times[idx]
 
 
