@@ -24,7 +24,8 @@ mini-project-3-mark-barlow/
 ├── src/
 │   ├── __init__.py
 │   ├── main.py              # Main application entry point
-│   ├── dashboard.py          # Web dashboard application
+│   ├── dashboard.py         # Flask web dashboard
+│   ├── streamlit_app.py     # Streamlit dashboard (deploy to share.streamlit.io)
 │   ├── data_loader.py       # Data loading and preprocessing
 │   ├── analyzer.py          # Data analysis and insights
 │   ├── visualizer.py        # Visualization generation
@@ -70,12 +71,19 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
-**Option B: Launch Web Dashboard**
+**Option B: Launch Web Dashboard (Flask)**
 ```bash
 python src/main.py --dashboard
 ```
 
 The dashboard will be available at `http://localhost:5000` (or specify a different port with `--port`)
+
+**Option C: Launch Streamlit Dashboard**
+```bash
+streamlit run src/streamlit_app.py
+```
+
+Opens at `http://localhost:8501`. Deploy to [Streamlit Community Cloud](https://share.streamlit.io) by connecting this repo and setting main file to `src/streamlit_app.py`.
 
 ## 📊 Usage
 

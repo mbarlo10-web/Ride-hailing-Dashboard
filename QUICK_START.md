@@ -16,12 +16,18 @@
 
 ## Running the Dashboard
 
-**Launch the web dashboard:**
+**Option A – Streamlit (recommended for sharing/deploy):**
+```bash
+streamlit run src/streamlit_app.py
+```
+The app opens in your browser (default `http://localhost:8501`). You can deploy this to [Streamlit Community Cloud](https://share.streamlit.io) by connecting your GitHub repo and selecting `src/streamlit_app.py` as the main file.
+
+**Option B – Flask:**
 ```bash
 python src/main.py --dashboard
 ```
 
-The dashboard will start on `http://localhost:5000`
+The Flask dashboard will start on `http://localhost:5000`
 
 Open your browser and navigate to:
 - **http://localhost:5000** - View the dashboard
