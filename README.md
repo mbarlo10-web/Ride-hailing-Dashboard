@@ -16,6 +16,7 @@ This is an improved Python-based data analysis application for ride-hailing data
 - **🆕 Real-Time Dashboard**: Web-based dashboard for Sky Harbor Airport display
   - **Feature 1: Parking Zone Status Grid**: Real-time visualization of parking zones with occupancy status
   - **Feature 2: Active Ride Queue**: Live display of active rides with license plates, wait times, and timestamps
+  - **Streamlit Simulation Mode**: On Streamlit, the dashboard replays historical data in accelerated time so the clock, zones, and active rides visibly update even from a static dataset
 
 ## 📁 Project Structure
 
@@ -115,10 +116,21 @@ The dashboard provides:
 - **Parking Zone Status Grid**: 8x6 grid showing zone occupancy (green=available, yellow=moderate, red=busy)
 - **Active Ride Queue**: List of current rides with license plates, service types, wait times, and timestamps
 - **Live Statistics**: Total rides, active drivers, and occupied zones
-- **Current Time Display**: Real-time clock synchronized with server
+- **Current Time Display**: Real-time clock synchronized with server (Flask) or accelerated simulated time (Streamlit)
 - **Airport-Style Design**: Dark blue theme optimized for large-screen displays
 
 Perfect for displaying at Sky Harbor Airport waiting areas!
+
+### Streamlit Dashboard (Simulation & Extras)
+
+When run via `streamlit_app.py` (locally or on Streamlit Community Cloud), the dashboard:
+
+- **Replays the dataset in accelerated time** so the clock, parking zones, and active rides update every few seconds
+- **Uses a simulated “now”** to drive wait times and occupancy, giving the feel of a live feed from historical data
+- Adds **Analysis Highlights** charts:
+  - Rides by hour of day
+  - Rides by service
+- Includes a **QR code sidebar** with instructions so passengers can quickly access Sky Harbor information on their phones
 
 ### Programmatic Usage
 
